@@ -25,24 +25,37 @@ public class AppointmentService {
     public Appointment createAppointment(Appointment appointment) {
         appointment.setStatus("SCHEDULED");
         Appointment saved = appointmentRepository.save(appointment);
-        // Send notification email
+
+        // CORRECCIÓN: Manejo de errores en el envío de correo (try-catch)
+        // Esto evita que la aplicación lance un Error 500 si Gmail falla.
         User patient = userRepository.findById(appointment.getPatientId()).orElse(null);
         if (patient != null) {
-            emailService.sendNotification(patient.getEmail(), "Cita Agendada",
-                    "Su cita ha sido agendada para " + appointment.getDateTime());
+            try {
+                emailService.sendNotification(patient.getEmail(), "Cita Agendada",
+                        "Su cita ha sido agendada para " + appointment.getDateTime());
+            } catch (Exception e) {
+                // Solo registramos el error en la consola, pero la cita YA se guardó exitosamente.
+                System.out.println("ADVERTENCIA: No se pudo enviar el correo de confirmación: " + e.getMessage());
+            }
         }
         return saved;
     }
 
     public Appointment updateAppointment(String id, Appointment updatedAppointment) {
-        Appointment existing = appointmentRepository.findById(id).orElseThrow(() -> new RuntimeException("Appointment not found"));
+        // CORRECCIÓN: Mensaje de error más descriptivo
+        Appointment existing = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró la cita con ID: " + id));
+        
         existing.setDateTime(updatedAppointment.getDateTime());
         existing.setNotes(updatedAppointment.getNotes());
         return appointmentRepository.save(existing);
     }
 
     public void cancelAppointment(String id) {
-        Appointment appointment = appointmentRepository.findById(id).orElseThrow(() -> new RuntimeException("Appointment not found"));
+        // CORRECCIÓN: Mensaje de error más descriptivo
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("No se encontró la cita con ID para cancelar: " + id));
+        
         appointment.setStatus("CANCELLED");
         appointmentRepository.save(appointment);
     }
