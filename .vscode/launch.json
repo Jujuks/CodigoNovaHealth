@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-NovaHealthApplication<novahealth>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.novahealth.NovaHealthApplication",
+            "projectName": "novahealth",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

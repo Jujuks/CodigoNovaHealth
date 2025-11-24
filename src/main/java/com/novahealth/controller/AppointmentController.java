@@ -1,0 +1,64 @@
+package com.novahealth.controller;
+
+import com.novahealth.model.Appointment;
+import com.novahealth.service.AppointmentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/appointments")
+public class AppointmentController {
+
+    @Autowired
+    private AppointmentService appointmentService;
+
+    @PostMapping
+    public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment, Authentication authentication) {
+        // Asumir que patientId viene del token
+        String patientId = authentication.getName(); // email como username
+        appointment.setPatientId(patientId);
+        Appointment created = appointmentService.createAppointment(appointment);
+        return ResponseEntity.ok(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Appointment> updateAppointment(@PathVariable String id, @RequestBody Appointment appointment) {
+        Appointment updated = appointmentService.updateAppointment(id, appointment);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancelAppointment(@PathVariable String id) {
+        appointmentService.cancelAppointment(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<LocalDateTime>> getAvailableSlots(@RequestParam String doctorId,
+                                                                 @RequestParam String start,
+                                                                 @RequestParam String end) {
+        LocalDateTime startDate = LocalDateTime.parse(start);
+        LocalDateTime endDate = LocalDateTime.parse(end);
+        List<LocalDateTime> available = appointmentService.getAvailableSlots(doctorId, startDate, endDate);
+        return ResponseEntity.ok(available);
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<Appointment>> getPatientHistory(Authentication authentication) {
+        String patientId = authentication.getName();
+        List<Appointment> history = appointmentService.getPatientHistory(patientId);
+        return ResponseEntity.ok(history);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Appointment>> getAppointmentsByPatient(Authentication authentication) {
+        String patientId = authentication.getName();
+        List<Appointment> appointments = appointmentService.getAppointmentsByPatient(patientId);
+        return ResponseEntity.ok(appointments);
+    }
+}
