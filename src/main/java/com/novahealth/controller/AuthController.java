@@ -31,17 +31,27 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        User user = new User(request.getName(), request.getEmail(), request.getPassword(), request.getRole() != null ? request.getRole() : "PATIENT");
-        userService.registerUser(user);
-        return ResponseEntity.ok(new AuthResponse(null, "User registered successfully"));
+        try {
+            User user = new User(request.getName(), request.getEmail(), request.getPassword(), request.getRole() != null ? request.getRole() : "PATIENT");
+            User savedUser = userService.registerUser(user);
+            System.out.println("User registered: " + savedUser.getEmail());
+            return ResponseEntity.ok(new AuthResponse(null, "User registered successfully"));
+        } catch (Exception e) {
+            System.out.println("Registration failed: " + e.getMessage());
+            return ResponseEntity.status(500).body(new AuthResponse(null, "Registration failed: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtUtil.generateToken(request.getEmail());
-        return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtUtil.generateToken(request.getEmail());
+            return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(new AuthResponse(null, "Invalid credentials: " + e.getMessage()));
+        }
     }
 }
